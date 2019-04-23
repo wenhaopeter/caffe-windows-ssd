@@ -116,8 +116,8 @@ class Solver {
   SolverParameter param_;
   int iter_;
   int current_step_;
-  shared_ptr<Net<Dtype> > net_;
-  vector<shared_ptr<Net<Dtype> > > test_nets_;
+  shared_ptr<Net<Dtype> > net_;   //训练使用的网络结构
+  vector<shared_ptr<Net<Dtype> > > test_nets_;  //测试使用网络结构
   vector<Callback*> callbacks_;
   vector<Dtype> losses_;
   Dtype smoothed_loss_;

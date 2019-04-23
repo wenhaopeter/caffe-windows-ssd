@@ -65,7 +65,7 @@ void LayerRegistry<Dtype>::AddCreator(const string& type, Creator creator) {
   CreatorRegistry& registry = Registry();
   CHECK_EQ(registry.count(type), 0) << "Layer type " << type
                                     << " already registered.";
-  registry[type] = creator;
+  registry[type] = creator;  //保存的只是函数指针，Creator_##type##Layer<float> 和Creator_##type##Layer<double>
 }
 
 // Get a layer using a LayerParameter.
@@ -162,14 +162,14 @@ shared_ptr<Layer<Dtype> > GetBiasLayer(const LayerParameter& param) {
 }
 REGISTER_LAYER_CREATOR(Bias, GetBiasLayer);
 
-
+/*
 // Get Flatten layer according to engine.
 template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetConcatLayer(const LayerParameter& param) {
 	return shared_ptr<Layer<Dtype> >(new ConcatLayer<Dtype>(param));
 }
 REGISTER_LAYER_CREATOR(Concat, GetConcatLayer);
-
+*/
 
 // Get DetectionEvaluate layer according to engine.
 template <typename Dtype>

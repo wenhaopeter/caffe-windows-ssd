@@ -164,6 +164,7 @@ class Net {
   inline const vector<vector<bool> >& bottom_need_backward() const {
     return bottom_need_backward_;
   }
+  //对于特定的损失层，每个top blob对总loss的权重
   inline const vector<Dtype>& blob_loss_weights() const {
     return blob_loss_weights_;
   }
@@ -277,41 +278,50 @@ class Net {
   string name_;
   /// @brief The phase: TRAIN or TEST
   Phase phase_;
+  /*
+  计算网络中的各blob是否需要参与BP。该信息由三个类似的结构记录：
+  bottom_need_backward_，blob_need_backward_和layer_need_backward_。
+  在计算这些信息时主要考虑几方面信息：1. param blob是否需要训练，是的话它的各级上层也需要参与BP；
+  2. 是否有设定skip_propagate_down属性，如有设定则意味着该bottom blob下面的层都不需要参与BP；
+  3. 是否对loss function有贡献，如果不对loss产生影响的话那就不必要参与BP了；
+  4. 是否设定全局的force_bakcward属性。
+  */
   /// @brief Individual layers in the net
   vector<shared_ptr<Layer<Dtype> > > layers_;
   vector<string> layer_names_;
   map<string, int> layer_names_index_;
-  vector<bool> layer_need_backward_;
+  vector<bool> layer_need_backward_; //是一个一级索引，
   /// @brief the blobs storing intermediate results between the layer.
-  vector<shared_ptr<Blob<Dtype> > > blobs_;
-  vector<string> blob_names_;
-  map<string, int> blob_names_index_;
-  vector<bool> blob_need_backward_;
+  //每个网络中有两种blob，以blob开头的数据blob，和以param开头的权重blob，这两种blob不一样。
+  vector<shared_ptr<Blob<Dtype> > > blobs_; //层与层直接传递数据的blob
+  vector<string> blob_names_; //与每个blob想对应的name
+  map<string, int> blob_names_index_;  //与blob的name对应的id索引
+  vector<bool> blob_need_backward_;  //该blob是否需要方向传播，是一个一级索引，
   /// bottom_vecs stores the vectors containing the input for each layer.
   /// They don't actually host the blobs (blobs_ does), so we simply store
   /// pointers.
-  vector<vector<Blob<Dtype>*> > bottom_vecs_;
-  vector<vector<int> > bottom_id_vecs_;
-  vector<vector<bool> > bottom_need_backward_;
+  vector<vector<Blob<Dtype>*> > bottom_vecs_;  //blobs的影子，用于记录每个layer的输入blob
+  vector<vector<int> > bottom_id_vecs_;      //与bottom_vecs_关联。用于在blobs中定位每层layer的每个输入blob
+  vector<vector<bool> > bottom_need_backward_;  //与bottom_vecs_关联，标志每个blob是否需要反向传播，是一个二级索引
   /// top_vecs stores the vectors containing the output for each layer
-  vector<vector<Blob<Dtype>*> > top_vecs_;
-  vector<vector<int> > top_id_vecs_;
+  vector<vector<Blob<Dtype>*> > top_vecs_;  //一个二位数组，，每行存贮的是每层中blob的地址
+  vector<vector<int> > top_id_vecs_;   //一个二位数组，每一行存储的是每层中的blob在net中 全局id索引 
   /// Vector of weight in the loss (or objective) function of each net blob,
   /// indexed by blob_id.
-  vector<Dtype> blob_loss_weights_;
+  vector<Dtype> blob_loss_weights_;  //损失层中top blob对全局损失函数的贡献权重，损失层可能有多个，但是一般为一个
   vector<vector<int> > param_id_vecs_;
   vector<int> param_owners_;
-  vector<string> param_display_names_;
+  vector<string> param_display_names_;   //net中权重blob的名称
   vector<pair<int, int> > param_layer_indices_;
   map<string, int> param_names_index_;
-  /// blob indices for the input and the output of the net
+  /// blob indices for the input and the output of the net 网络中输入/输出blob的索引
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
   vector<Blob<Dtype>*> net_input_blobs_;
   vector<Blob<Dtype>*> net_output_blobs_;
-  /// The parameters in the network.
-  vector<shared_ptr<Blob<Dtype> > > params_;
-  vector<Blob<Dtype>*> learnable_params_;
+  /// The parameters in the network. 
+  vector<shared_ptr<Blob<Dtype> > > params_;   //网络中的参数，net中的权重，用于存储网络权重
+  vector<Blob<Dtype>*> learnable_params_;      ///可以学习的参数，可训练的权重blob
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),

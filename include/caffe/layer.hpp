@@ -69,7 +69,10 @@ class Layer {
     CheckBlobCounts(bottom, top);
     LayerSetUp(bottom, top);
     Reshape(bottom, top);
-    SetLossWeights(top);
+    SetLossWeights(top);  //一般情况下loss weight只有一个，即为最后的一层中的loss
+	/*有时候，总的loss function中包含了几个layer的top blob输出，
+	它们的权重可以通过在网络结构描述文件中loss_weight参数指定。
+	这里会将相应top blob中的diff所有元素全填成loss_weight。*/
   }
 
   /**
@@ -170,6 +173,7 @@ class Layer {
 
   /**
    * @brief Returns the scalar loss associated with a top blob at a given index.
+   * top blob 中参与loss计算的权重
    */
   inline Dtype loss(const int top_index) const {
     return (loss_.size() > top_index) ? loss_[top_index] : Dtype(0);
@@ -304,7 +308,7 @@ class Layer {
 
   /** The vector that indicates whether each top blob has a non-zero weight in
    *  the objective function. */
-  vector<Dtype> loss_;
+  vector<Dtype> loss_;  //决定哪一个top blob 有非零权重，来决定目标函数 
 
   /** @brief Using the CPU device, compute the layer output. */
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -330,6 +334,7 @@ class Layer {
    * @brief Using the GPU device, compute the gradients for any parameters and
    *        for the bottom blobs if propagate_down is true.
    *        Fall back to Backward_cpu() if unavailable.
+   *        相应的propagate_down为true，则需要计算相关的bottom blob的梯度
    */
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down,
@@ -387,6 +392,10 @@ class Layer {
    * the loss function. Store non-zero loss weights in the diff blob.
    */
   inline void SetLossWeights(const vector<Blob<Dtype>*>& top) {
+	  /*  The amount of weight to assign each top blob in the objective.
+         Each layer assigns a default value, usually of either 0 or 1,
+         to each top blob.  proto中的描述
+	  */
     const int num_loss_weights = layer_param_.loss_weight_size();
     if (num_loss_weights) {
       CHECK_EQ(top.size(), num_loss_weights) << "loss_weight must be "

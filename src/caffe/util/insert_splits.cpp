@@ -22,7 +22,7 @@ void InsertSplits(const NetParameter& param, NetParameter* param_split) {
   for (int i = 0; i < param.layer_size(); ++i) {
     const LayerParameter& layer_param = param.layer(i);
     layer_idx_to_layer_name[i] = layer_param.name();
-    for (int j = 0; j < layer_param.bottom_size(); ++j) {
+    for (int j = 0; j < layer_param.bottom_size(); ++j) { //µ×²¿µÄ
       const string& blob_name = layer_param.bottom(j);
       if (blob_name_to_last_top_idx.find(blob_name) ==
           blob_name_to_last_top_idx.end()) {
